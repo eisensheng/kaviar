@@ -10,7 +10,7 @@ def _get_version():
 
 
 def _read_long_description():
-    with io.open('README.md', encoding='utf-8') as ld_stream:
+    with io.open('README.rst', encoding='utf-8') as ld_stream:
         return ld_stream.read()
 
 
