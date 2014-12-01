@@ -28,7 +28,8 @@ Simplified event and data formatting and logging.
 
 Kaviar aids developers in need of a convenient way to produce structured
 representation of key-value pairs for logging or representation with a 
-fixed syntax suit suited for later evaluation or just aesthetic reasons.
+fixed human and machine friendly syntax suited for later evaluation or
+just aesthetic reasons.
 
 
 Example
