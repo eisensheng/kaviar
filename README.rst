@@ -3,6 +3,10 @@
 Kaviar
 ======
 
+.. image:: https://readthedocs.org/projects/kaviar/badge/?version=latest&style=flat
+    :target: http://kaviar.readthedocs.org/en/latest/
+    :alt: Documentation
+
 .. image:: https://pypip.in/version/kaviar/badge.svg?style=flat
     :target: https://pypi.python.org/pypi/kaviar/
     :alt: Latest Version
