@@ -1,0 +1,6 @@
+namedlist==1.5
+pyflakes==0.8.1
+six==1.8.0
+wheel==0.24.0
+
+-r test.txt

@@ -1,0 +1,6 @@
+include MANIFEST.in COPYING README.md tox.ini Makefile setup.cfg
+recursive-include tests *
+recursive-include requirements *.txt
+
+global-exclude *pyc
+prune __pycache__
