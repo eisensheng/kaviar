@@ -1,7 +1,6 @@
 language: python
 python: 3.4
 env:
-    - TOX_ENV=cov-clean
     - TOX_ENV=py26
     - TOX_ENV=py26-odict
     - TOX_ENV=py27
@@ -9,9 +8,8 @@ env:
     - TOX_ENV=py32
     - TOX_ENV=py33
     - TOX_ENV=py34
-    - TOX_ENV=cov-combine
 install:
-    - pip install tox
+    - pip install tox setuptools==7.0
 script:
     - tox -e $TOX_ENV
 
