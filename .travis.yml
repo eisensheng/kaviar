@@ -1,15 +1,18 @@
 language: python
 python: 3.4
 env:
-    - TOX_ENV=py26
-    - TOX_ENV=py26-odict
-    - TOX_ENV=py27
-    - TOX_ENV=pypy
-    - TOX_ENV=py32
-    - TOX_ENV=py33
-    - TOX_ENV=py34
+    - TOX_JOB=py26
+    - TOX_JOB=py26-odict
+    - TOX_JOB=py27
+    - TOX_JOB=pypy
+    - TOX_JOB=py32
+    - TOX_JOB=py33
+    - TOX_JOB=py34
+    - TOX_JOB=coverage
 install:
-    - pip install tox setuptools==7.0
+    - pip install -r requirements/ci.txt
 script:
-    - tox -e $TOX_ENV
+    - invoke ci_run_job $TOX_JOB
+after_success:
+    coveralls
 
