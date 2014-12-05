@@ -19,10 +19,6 @@ Kaviar
     :target: https://pypi.python.org/pypi/kaviar/
     :alt: Latest Version
 
-.. image:: https://pypip.in/wheel/kaviar/badge.svg?style=flat
-    :target: https://pypi.python.org/pypi/kaviar/
-    :alt: Wheel Available
-
 .. image:: https://pypip.in/py_versions/kaviar/badge.svg?style=flat
     :target: https://pypi.python.org/pypi/kaviar/
     :alt: Python versions
