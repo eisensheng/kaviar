@@ -3,6 +3,14 @@
 Kaviar
 ======
 
+.. image:: https://img.shields.io/travis/eisensheng/kaviar.svg?style=flat
+    :target: https://travis-ci.org/eisensheng/kaviar
+    :alt: Continuous Integration
+
+.. image:: https://img.shields.io/coveralls/eisensheng/kaviar/develop.svg?style=flat
+    :target: https://coveralls.io/r/eisensheng/kaviar?branch=develop
+    :alt: Test Coverage
+
 .. image:: https://readthedocs.org/projects/kaviar/badge/?version=latest&style=flat
     :target: http://kaviar.readthedocs.org/en/latest/
     :alt: Documentation
