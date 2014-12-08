@@ -1,4 +1,4 @@
-include MANIFEST.in COPYING README.md tox.ini Makefile setup.cfg
+include MANIFEST.in COPYING README.rst tox.ini Makefile setup.cfg tasks.py
 recursive-include tests *
 recursive-include requirements *.txt
 
