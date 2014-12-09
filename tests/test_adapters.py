@@ -23,20 +23,16 @@ def event_logger():
 @pytest.fixture
 def assert_logged(caplog):
     def __assert_logged(*args):
-        expected_records = ([args, ] if (len(args) == 2
-                                         and isinstance(args[0], int)
-                                         and isinstance(args[1], text_type))
-                            else args)
+        expected_records = ([('root', ) + args, ]
+                            if (len(args) == 2 and
+                                isinstance(args[0], int) and
+                                isinstance(args[1], text_type))
+                            else list(args))
+
+        assert caplog.record_tuples() == expected_records
 
         actual_records = caplog.handler.records
         caplog.handler.records = []
-
-        assert len(actual_records) == len(expected_records)
-        for expected_record, actual_record in zip(expected_records,
-                                                  actual_records):
-
-            assert actual_record.levelno == expected_record[0]
-            assert actual_record.args[0] == expected_record[1]
         return actual_records
 
     return __assert_logged
@@ -94,8 +90,8 @@ def test_define_logger_func(logger, assert_logged):
     logger_b('test', 'toast', 'taste')
     logger_a(1, 2, 3)
 
-    assert_logged((logging.DEBUG, 'a=test   b=toast   c=taste'),
-                  (logging.INFO, 'z=1   x=2   y=3'))
+    assert_logged(('root', logging.DEBUG, 'a=test   b=toast   c=taste'),
+                  ('root', logging.INFO, 'z=1   x=2   y=3'))
 
 
 @log_test_data
@@ -122,6 +118,6 @@ def test_define_event_logger_func(event_logger, assert_logged):
     logger_b('EVENT_B', 'test', 'toast', 'taste')
     logger_a('EVENT_A', 1, 2, 3)
 
-    assert_logged((logging.DEBUG, ('event=EVENT_B'
-                                   '   a=test   b=toast   c=taste')),
-                  (logging.INFO, 'event=EVENT_A   z=1   x=2   y=3'))
+    assert_logged(('root', logging.DEBUG, ('event=EVENT_B   a=test'
+                                           '   b=toast   c=taste')),
+                  ('root', logging.INFO, 'event=EVENT_A   z=1   x=2   y=3'))
