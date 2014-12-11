@@ -77,9 +77,28 @@ def test_log_exception(logger, assert_logged):
 
 def test_extra_context(assert_logged):
     logger_ = KvLoggerAdapter.get_logger(extra={'extrawurst': True, })
-    logger_.info('ExtraInfoEvent', log='value')
+    logger_.info('IgnoredValue', log='value')
 
     assert_logged(logging.INFO, 'extrawurst=True   log=value')
+
+
+@pytest.mark.parametrize('name_in,name_out',
+                         [((), 'root'),
+                          (('myapp', ), 'myapp'),
+                          (('myapp.submodule', ), 'myapp.submodule'),
+                          (('myapp...submodule', ), 'myapp.submodule'),
+                          (('myapp.submodule...', ), 'myapp.submodule'),
+                          (('myapp', 'submodule', ), 'myapp.submodule'),
+                          (('myapp.', 'submodule', ), 'myapp.submodule'),
+                          (('myapp.submodule', 'part'),
+                           'myapp.submodule.part'), ])
+def test_logger_name_easy(caplog, name_in, name_out):
+    logger_ = KvLoggerAdapter.get_logger(*name_in)
+    logger_.info(b=23, g=19)
+
+    assert caplog.record_tuples() == [
+        (name_out, logging.INFO, 'b=23   g=19')
+    ]
 
 
 @skip_if_pypy

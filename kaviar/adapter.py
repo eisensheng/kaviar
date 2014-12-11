@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 from __future__ import (absolute_import, print_function,
                         unicode_literals, division)
+from itertools import chain
 
 from logging import (getLogger, LoggerAdapter,
                      DEBUG, INFO, WARNING, ERROR, CRITICAL)
@@ -9,6 +10,15 @@ from six.moves import zip
 
 from .api import kv_format
 from .functools import KvFormatter, NO_DEFAULT
+
+
+def _normalize_name(chunks):
+    if not chunks:
+        return None
+
+    particles = chain.from_iterable(x.split('.') for x in chunks
+                                    if hasattr(x, 'split'))
+    return '.'.join(x for x in (y.strip() for y in particles) if x)
 
 
 class KvLoggerAdapter(LoggerAdapter):
@@ -41,12 +51,13 @@ class KvLoggerAdapter(LoggerAdapter):
         return self._log(level, self._format(list(args), kwargs), exc_info)
 
     @classmethod
-    def get_logger(cls, name=None, extra=None):
+    def get_logger(cls, *name, extra=None):
         """Construct a new :class:`KvLoggerAdapter` which encapsulates
         the :class:`logging.Logger` specified by ``name``.
 
         :param name:
-            The logger name.
+            Any amount of symbols.  Will be concatenated and normalized
+            to form the logger name.  Can also be empty.
         :param extra:
             Additional context relevant information.
         :return:
@@ -54,7 +65,7 @@ class KvLoggerAdapter(LoggerAdapter):
         :rtype:
             :class:`KvLoggerAdapter`
         """
-        return cls(getLogger(name), extra)
+        return cls(getLogger(_normalize_name(name)), extra)
 
     def define_logger_func(self, level, field_names, default=NO_DEFAULT,
                            filters=None, include_exc_info=False):
