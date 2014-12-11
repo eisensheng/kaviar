@@ -51,7 +51,7 @@ class KvLoggerAdapter(LoggerAdapter):
         return self._log(level, self._format(list(args), kwargs), exc_info)
 
     @classmethod
-    def get_logger(cls, *name, extra=None):
+    def get_logger(cls, *name, **kwargs):
         """Construct a new :class:`KvLoggerAdapter` which encapsulates
         the :class:`logging.Logger` specified by ``name``.
 
@@ -65,7 +65,8 @@ class KvLoggerAdapter(LoggerAdapter):
         :rtype:
             :class:`KvLoggerAdapter`
         """
-        return cls(getLogger(_normalize_name(name)), extra)
+        return cls(getLogger(_normalize_name(name)),
+                   kwargs.get('extra', None))
 
     def define_logger_func(self, level, field_names, default=NO_DEFAULT,
                            filters=None, include_exc_info=False):
