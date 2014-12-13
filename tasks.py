@@ -1,7 +1,148 @@
+from contextlib import contextmanager
+import io
+import os
+import re
 from invoke import run, task
 from textwrap import dedent
 
 from tox._config import parseconfig
+
+RELEASE_BRANCH = 'master'
+VERSION_FILE = 'kaviar/__init__.py'
+
+
+_version_re = re.compile(r'(?:v(\d+)(?:\.|_)(\d+))')
+
+
+def _tool_run(*commands, env=None, **kwargs):
+    kwargs.setdefault('hide', True)
+
+    _env_backup, output = os.environb.copy(), []
+    for command in commands:
+        try:
+            os.environb.update(env or {})
+            output += run(command, **kwargs),
+        finally:
+            os.environb.clear()
+            os.environb.update(_env_backup)
+
+    return output[0] if len(output) == 1 else output
+
+
+def _version_find_existing():
+    """Returns set of existing versions in this repository.  This
+    information is backed by previously used version tags in git.
+    Available tags are pulled from origin repository before.
+
+    :return:
+        available versions
+    :rtype:
+        set
+    """
+    _tool_run('git fetch origin -t')
+    git_tags = [x for x in (y.strip() for y in (_tool_run('git tag -l')
+                                                .stdout.split('\n'))) if x]
+    return {tuple(int(n) if n else 0 for n in m.groups())
+            for m in (_version_re.match(t) for t in git_tags) if m}
+
+
+def _version_get_latest():
+    """Returns the most recent used version number.  This information is
+    backed by previously used version tags in git.  Git tags are pulled from
+    server before returning.
+
+    :return:
+        latest version
+    :rtype:
+        tuple
+    """
+    return max(_version_find_existing())
+
+
+def _version_guess_next():
+    """Guess next version by incrementing least significant version position
+    in latest existing version.
+
+    :return:
+        next version
+    :rtype:
+        str
+    """
+    try:
+        latest_version = list(_version_get_latest())
+    except ValueError:
+        latest_version = [0, 0]
+    latest_version[-1] += 1
+    return tuple(latest_version)
+
+
+def _version_format(version):
+    return '.'.join(str(x) for x in version)
+
+
+def _git_get_current_branch():
+    """Determine the current checked out git branch name.
+
+    :return:
+        git branch name
+    :rtype:
+        str
+    """
+    return (_tool_run('git rev-parse --abbrev-ref HEAD')
+            .stdout.strip('\n'))
+
+
+@contextmanager
+def _git_enable_branch(desired_branch):
+    """Enable desired branch name."""
+    preserved_branch = _git_get_current_branch()
+    try:
+        if preserved_branch != desired_branch:
+            _tool_run('git checkout ' + desired_branch)
+        yield
+    finally:
+        if preserved_branch and preserved_branch != desired_branch:
+            _tool_run('git checkout ' + preserved_branch)
+
+
+@contextmanager
+def _git_enable_release_branch():
+    """Enable desired release branch."""
+    with _git_enable_branch(RELEASE_BRANCH):
+        yield
+
+
+_project_assign_re = re.compile((r"""^(\s*([^\s]+)\s*=\s*(?:"|'))"""
+                                 r"""(?:[^"]*)((?:"|')\s*)$"""))
+
+
+def _project_get_metadata(*args):
+    with _git_enable_release_branch():
+        return [_tool_run('python setup.py --' + x).strip('\n')
+                for x in args]
+
+
+def _project_get_metadata_key(key):
+    return _project_get_metadata(key)[0]
+
+
+def _project_patch_version(new_version):
+    replacements = {'__version__': new_version, }
+
+    new_file_content = []
+    with io.open(VERSION_FILE) as in_stream:
+        for line, match in ((l, _project_assign_re.match(l))
+                            for l in in_stream.readlines()):
+            if match:
+                head, var_name, tail = match.groups()
+                if var_name in replacements:
+                    line = head + replacements[var_name] + tail
+            new_file_content += line,
+
+    new_version_file = VERSION_FILE + '.new'
+    with io.open(new_version_file, 'w') as out_stream:
+        out_stream.writelines(new_file_content)
+    os.rename(new_version_file, VERSION_FILE)
 
 
 @task
@@ -35,3 +176,33 @@ def ci_run_job(job_name):
          + ((' -e ' + job_name) if job_name != 'coverage' else '')
          + ' -- --color=yes'),
         pty=True)
+
+
+@task
+def mkrelease(finish='yes', version=''):
+    """Allocates the next version number and marks current develop branch
+    state as a new release with the allocated version number.
+    Syncs new state with origin repository.
+    """
+    if not version:
+        version = _version_format(_version_guess_next())
+
+    if _git_get_current_branch() != 'release/' + version:
+        _tool_run('git checkout develop',
+                  'git flow release start ' + version)
+
+    _project_patch_version(version)
+    run('git diff ' + VERSION_FILE, pty=True)
+
+    _tool_run(('git commit -m "Bump Version to {0!s}" {1!s}'
+               .format(version, VERSION_FILE)))
+
+    if finish not in ('no', 'n', ):
+        _tool_run("git flow release finish -m '{0}' {0}".format(version),
+                  env={b'GIT_MERGE_AUTOEDIT': b'no', })
+        _tool_run('git push origin --tags develop master')
+
+
+@task
+def test():
+    print(_git_get_current_branch())
