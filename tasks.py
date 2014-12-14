@@ -2,6 +2,7 @@ from contextlib import contextmanager
 import io
 import os
 import re
+from datetime import datetime
 from invoke import run, task
 from textwrap import dedent
 
@@ -9,6 +10,7 @@ from tox._config import parseconfig
 
 RELEASE_BRANCH = 'master'
 VERSION_FILE = 'kaviar/__init__.py'
+CHANGES_FILE = 'CHANGES.rst'
 
 
 _version_re = re.compile(r'(?:v(\d+)(?:\.|_)(\d+))')
@@ -126,23 +128,32 @@ def _project_get_metadata_key(key):
     return _project_get_metadata(key)[0]
 
 
+def _patch_file(file_path, line_callback):
+    with io.open(file_path) as in_stream:
+        new_file_content = [line_callback(l.strip('\n')) + '\n'
+                            for l in in_stream.readlines()]
+    new_file_name = file_path + '.new'
+    with io.open(new_file_name, 'w') as out_stream:
+        out_stream.writelines(new_file_content)
+    os.rename(new_file_name, file_path)
+
+
 def _project_patch_version(new_version):
     replacements = {'__version__': new_version, }
 
-    new_file_content = []
-    with io.open(VERSION_FILE) as in_stream:
-        for line, match in ((l, _project_assign_re.match(l))
-                            for l in in_stream.readlines()):
-            if match:
-                head, var_name, tail = match.groups()
-                if var_name in replacements:
-                    line = head + replacements[var_name] + tail
-            new_file_content += line,
+    def __line_callback(line):
+        match = _project_assign_re.match(line)
+        if not match:
+            return line
+        head, var_name, tail = match.groups()
+        return head + replacements[var_name] + tail
+    _patch_file(VERSION_FILE, __line_callback)
 
-    new_version_file = VERSION_FILE + '.new'
-    with io.open(new_version_file, 'w') as out_stream:
-        out_stream.writelines(new_file_content)
-    os.rename(new_version_file, VERSION_FILE)
+
+def _project_patch_changelog():
+    pit = datetime.now().strftime('Released on %Y-%m-%d.')
+    _patch_file(CHANGES_FILE,
+                lambda l: l if l != 'Yet to be released.' else pit)
 
 
 @task
@@ -192,17 +203,14 @@ def mkrelease(finish='yes', version=''):
                   'git flow release start ' + version)
 
     _project_patch_version(version)
-    run('git diff ' + VERSION_FILE, pty=True)
+    _project_patch_changelog()
+    patched_files = ' '.join([VERSION_FILE, CHANGES_FILE])
 
+    run('git diff ' + patched_files, pty=True)
     _tool_run(('git commit -m "Bump Version to {0!s}" {1!s}'
-               .format(version, VERSION_FILE)))
+               .format(version, patched_files)))
 
     if finish not in ('no', 'n', ):
         _tool_run("git flow release finish -m '{0}' {0}".format(version),
                   env={b'GIT_MERGE_AUTOEDIT': b'no', })
         _tool_run('git push origin --tags develop master')
-
-
-@task
-def test():
-    print(_git_get_current_branch())
