@@ -15,15 +15,15 @@ Kaviar
     :target: http://kaviar.readthedocs.org/en/latest/
     :alt: Documentation
 
-.. image:: https://pypip.in/version/kaviar/badge.svg?style=flat
+.. image:: https://img.shields.io/pypi/v/kaviar.svg?style=flat
     :target: https://pypi.python.org/pypi/kaviar/
     :alt: Latest Version
 
-.. image:: https://pypip.in/py_versions/kaviar/badge.svg?style=flat
+.. image:: https://img.shields.io/pypi/pyversions/kaviar.svg?style=flat
     :target: https://pypi.python.org/pypi/kaviar/
     :alt: Python versions
 
-.. image:: https://pypip.in/license/kaviar/badge.svg?style=flat
+.. image:: https://img.shields.io/pypi/l/kaviar.svg?style=flat
     :target: https://github.com/eisensheng/kaviar/blob/develop/COPYING
     :alt: MIT License
 
